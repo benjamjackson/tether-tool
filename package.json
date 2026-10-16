@@ -1,0 +1,27 @@
+{
+  "name": "tether-tool",
+  "version": "0.1.0",
+  "description": "Offline on-set RAW ingestion: folder-driven naming, verified dual backup, Bridge-ready ratings and labels.",
+  "main": "src/main/main.js",
+  "scripts": {
+    "build": "esbuild src/renderer/app.jsx --bundle --outfile=dist/renderer.js --loader:.jsx=jsx --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --minify",
+    "start": "npm run build && electron .",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "exiftool-vendored": "^39.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "electron": "^44.8.0",
+    "esbuild": "^0.28.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  }
+}

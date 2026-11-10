@@ -1,6 +1,6 @@
 // sony-tether: a small helper that talks to a Sony camera over USB using
 // Sony's Camera Remote SDK, and saves each frame shot into a folder on this
-// computer. The Tether Tool app starts it, reads one JSON object per line
+// computer. The Wrangle app starts it, reads one JSON object per line
 // from its output, and sends it plain-text commands on its input.
 //
 //   sony-tether --save-dir <folder>    run until "quit" or the input closes

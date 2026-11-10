@@ -60,7 +60,7 @@ function wireEngine() {
   engine.on('session', (s) => { send('session', s); pushStats(); });
 
   protocol.handle('tether', (req) => {
-    const file = decodeURIComponent(new URL(req.url).pathname);
+    const file = new URL(req.url).searchParams.get('f') || '';
     if (!path.resolve(file).startsWith(path.resolve(cacheDir) + path.sep)) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(file).toString());
   });

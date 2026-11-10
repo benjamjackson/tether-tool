@@ -9,9 +9,17 @@ No editing, no cloud, no accounts. The files, folders and `.xmp` sidecars on you
 are the real record. The app's database is only a working index, so deleting the app
 loses nothing.
 
-## Run it (macOS)
+## Run it (macOS or Windows)
 
-You need [Node.js](https://nodejs.org) 22 or newer (the LTS installer is fine).
+The same code runs on both. Mac is the main target; Windows works for testing and for
+shoots on a PC.
+
+1. Install [Node.js](https://nodejs.org) 22 or newer (the LTS installer is fine).
+2. Download this repo (green **Code** button, **Download ZIP**) and unzip it.
+3. Open a terminal in the unzipped folder:
+   - **Mac:** open Terminal, type `cd ` (with a space), drag the folder onto the window, press Return.
+   - **Windows:** open the folder in File Explorer, click the address bar, type `cmd`, press Enter.
+4. Run:
 
 ```sh
 npm install
@@ -61,6 +69,9 @@ Approved, Review, To Do). If you've renamed yours in Bridge, enter the same name
 Previews, the histogram and the clipping overlay use the JPEG the camera embeds in each
 RAW, so they're instant. That JPEG clips slightly before the RAW data, so a warning means
 "check this frame" rather than "this is definitely blown."
+
+On Windows, Bridge reads the same `.xmp` sidecars, so ratings and labels carry over
+the same way.
 
 ## Development
 

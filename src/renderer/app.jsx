@@ -4,7 +4,9 @@ import { createRoot } from 'react-dom/client';
 const api = window.tether;
 const LABELS = ['red', 'yellow', 'green', 'blue', 'purple'];
 const LABEL_KEYS = { 6: 'red', 7: 'yellow', 8: 'green', 9: 'blue' };
-const img = (p) => (p ? 'tether://p' + p.split('/').map(encodeURIComponent).join('/') : null);
+// Works for Mac (/Users/...) and Windows (C:\Users\...) paths alike.
+const img = (p) => (p ? 'tether://preview/?f=' + encodeURIComponent(p) : null);
+const FILE_BROWSER = api.platform === 'win32' ? 'Explorer' : 'Finder';
 const today = () => new Date().toLocaleDateString('en-CA');
 const gb = (b) => (b / 1024 ** 3).toFixed(b > 100 * 1024 ** 3 ? 0 : 1) + ' GB';
 
@@ -446,7 +448,7 @@ function SessionView({ id, onClose }) {
                 </div>
                 <div className="actions">
                   {selected.status === 'error' && <button className="danger" onClick={() => api.retry(selected.id).catch(fail)}>Retry</button>}
-                  <button onClick={() => api.reveal(selected.id)}>Show in Finder</button>
+                  <button onClick={() => api.reveal(selected.id)}>Show in {FILE_BROWSER}</button>
                 </div>
               </div>
             </section>

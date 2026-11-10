@@ -1,10 +1,10 @@
 {
   "name": "tether-tool",
   "version": "0.1.0",
-  "description": "Offline on-set RAW ingestion: folder-driven naming, verified dual backup, Bridge-ready ratings and labels.",
+  "description": "Offline on-set RAW ingestion for macOS and Windows: folder-driven naming, verified dual backup, Bridge-ready ratings and labels.",
   "main": "src/main/main.js",
   "scripts": {
-    "build": "esbuild src/renderer/app.jsx --bundle --outfile=dist/renderer.js --loader:.jsx=jsx --jsx=automatic --define:process.env.NODE_ENV=\\\"production\\\" --minify",
+    "build": "node scripts/build.js",
     "start": "npm run build && electron .",
     "test": "node --test --test-concurrency=1 test/*.test.js"
   },

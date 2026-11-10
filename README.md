@@ -16,6 +16,13 @@ shoots on a PC.
 
 1. Install [Node.js](https://nodejs.org) 22 or newer (the LTS installer is fine).
 2. Download this repo (green **Code** button, **Download ZIP**) and unzip it.
+
+**Windows, the easy way:** double-click `Start Tether Tool (Windows).bat` in the unzipped
+folder. The first start downloads what the app needs, then the app opens. If Windows says
+"Windows protected your PC", click **More info**, then **Run anyway**.
+
+**Or from a terminal:**
+
 3. Open a terminal in the unzipped folder:
    - **Mac:** open Terminal, type `cd ` (with a space), drag the folder onto the window, press Return.
    - **Windows:** open the folder in File Explorer, click the address bar, type `cmd`, press Enter.

@@ -21,6 +21,10 @@ shoots on a PC.
 folder. The first start downloads what the app needs, then the app opens. If Windows says
 "Windows protected your PC", click **More info**, then **Run anyway**.
 
+**Mac, the easy way:** double-click `Start Tether Tool (Mac).command`. If macOS says it
+can't be opened because it's from an unidentified developer, right-click the file, choose
+**Open**, then **Open** again. You only need to do that once.
+
 **Or from a terminal:**
 
 3. Open a terminal in the unzipped folder:
@@ -50,6 +54,23 @@ npm start
 4. Review with the keyboard: **1–3** stars, **0** clears, **6–9** color labels
    (red, yellow, green, blue), **Enter** opens the large view, **C** shows clipping,
    **X** compares, **F** follows new frames as they arrive.
+
+## Tethered cameras
+
+When a camera is plugged in by USB, it shows up by name in the top bar (for example
+"Sony a7 IV"). The first time, click it and choose the folder that camera's tether
+program saves into:
+
+- **Sony:** Imaging Edge Desktop (Remote). Set the camera's USB mode to *PC Remote*.
+- **Fujifilm:** FUJIFILM X Acquire.
+
+The app remembers that folder for that camera model and watches it in every session.
+Only frames that arrive after the session opens are taken in, so older files in that
+folder from other jobs are left alone. If the camera drops off mid-shoot, the top bar
+turns amber and says so.
+
+The app doesn't control the camera itself yet. Shooting still happens through the
+brand's program or the camera's shutter button.
 
 ## What it guarantees
 

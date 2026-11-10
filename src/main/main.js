@@ -7,6 +7,7 @@ const { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } = require('e
 const { open } = require('../core/db');
 const { Engine } = require('../core/engine');
 const preview = require('../core/preview');
+const { CameraMonitor } = require('../core/cameras');
 const { DEFAULT_FILE_TEMPLATE, DEFAULT_FOLDER_TEMPLATE, DATE_FORMATS, buildTarget, unknownTokens } = require('../core/naming');
 const { DEFAULT_LABELS } = require('../core/xmp');
 
@@ -15,6 +16,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'tether', privileges: { standard
 
 let win = null;
 let engine = null;
+let cameras = null;
 
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
@@ -58,6 +60,12 @@ function wireEngine() {
   engine.on('health', pushStats);
   engine.on('event', pushStats);
   engine.on('session', (s) => { send('session', s); pushStats(); });
+  engine.on('cameras', (c) => { send('cameras', c); pushStats(); });
+
+  cameras = new CameraMonitor();
+  cameras.on('change', (list) => engine.updateCameras(list));
+  cameras.on('error', (err) => console.warn('Camera check failed:', err.message));
+  cameras.start();
 
   protocol.handle('tether', (req) => {
     const file = new URL(req.url).searchParams.get('f') || '';
@@ -106,6 +114,17 @@ function wireEngine() {
     if (!a?.previewPath) return null;
     return 'data:image/png;base64,' + (await preview.clippingMask(a.previewPath)).toString('base64');
   });
+  handle('cameras', () => engine.cameraState());
+  handle('chooseCameraFolder', async (cam) => {
+    const r = await dialog.showOpenDialog(win, {
+      title: `Folder where ${cam.name}'s tether program saves`,
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (r.canceled) return engine.cameraState();
+    engine.setCameraFolder(cam, r.filePaths[0]);
+    return engine.cameraState();
+  });
+  handle('dismissMissingCamera', (key) => engine.dismissMissingCamera(key));
   handle('reveal', (id) => {
     const c = engine.asset(id)?.copies.find((x) => x.status === 'verified');
     if (c) shell.showItemInFolder(c.path);
@@ -125,6 +144,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', async () => {
+  if (cameras) cameras.stop();
   if (engine) await engine.close();
   await preview.closeExiftool();
 });

@@ -31,7 +31,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: '#111214',
-    title: 'Tether Tool',
+    title: 'Wrangle',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

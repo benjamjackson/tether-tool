@@ -1,5 +1,5 @@
 #!/bin/bash
-# Double-click this file to start Tether Tool on a Mac.
+# Double-click this file to start Wrangle on a Mac.
 cd "$(dirname "$0")" || exit 1
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
 
@@ -28,11 +28,11 @@ if [ -f native/sony/build-mac.sh ]; then
     echo "Sony tethering needs Apple's Command Line Tools."
     echo "A window will open: click Install, wait for it to finish, then double-click this file again."
     xcode-select --install >/dev/null 2>&1 || true
-    read -r -p "Press Return to start Tether Tool without Sony tethering for now."
+    read -r -p "Press Return to start Wrangle without Sony tethering for now."
   else
     bash native/sony/build-mac.sh || echo "Sony tethering could not be set up. The app will still start; send Claude a screenshot of this window."
   fi
 fi
 
-echo "Starting Tether Tool..."
+echo "Starting Wrangle..."
 npm start || fail

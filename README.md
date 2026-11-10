@@ -1,4 +1,6 @@
-# Tether Tool
+# Wrangle
+
+_(Formerly Tether Tool.)_
 
 An offline, subscription-free desktop app for on-set RAW ingestion. Files come off the
 camera or card, get named from the location folder you're shooting into, are copied to
@@ -17,11 +19,11 @@ shoots on a PC.
 1. Install [Node.js](https://nodejs.org) 22 or newer (the LTS installer is fine).
 2. Download this repo (green **Code** button, **Download ZIP**) and unzip it.
 
-**Windows, the easy way:** double-click `Start Tether Tool (Windows).bat` in the unzipped
+**Windows, the easy way:** double-click `Start Wrangle (Windows).bat` in the unzipped
 folder. The first start downloads what the app needs, then the app opens. If Windows says
 "Windows protected your PC", click **More info**, then **Run anyway**.
 
-**Mac, the easy way:** double-click `Start Tether Tool (Mac).command`. If macOS says it
+**Mac, the easy way:** double-click `Start Wrangle (Mac).command`. If macOS says it
 can't be opened because it's from an unidentified developer, right-click the file, choose
 **Open**, then **Open** again. You only need to do that once.
 
@@ -59,7 +61,7 @@ npm start
 
 ### Sony (direct, Mac)
 
-Tether Tool talks to Sony cameras directly through Sony's Camera Remote SDK, the way
+Wrangle talks to Sony cameras directly through Sony's Camera Remote SDK, the way
 Capture One does. No other program is needed.
 
 1. The first time you start the app on a Mac, the launcher asks to install Apple's

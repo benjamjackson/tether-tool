@@ -28,7 +28,7 @@ function escapeAttr(s) {
 
 function freshSidecar() {
   return [
-    '<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Tether Tool">',
+    '<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Wrangle">',
     ' <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">',
     '  <rdf:Description rdf:about=""',
     '    xmlns:xmp="http://ns.adobe.com/xap/1.0/">',

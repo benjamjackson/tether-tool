@@ -1,6 +1,6 @@
 @echo off
-title Tether Tool
-rem Double-click this file to start Tether Tool on Windows.
+title Wrangle
+rem Double-click this file to start Wrangle on Windows.
 cd /d "%~dp0"
 
 where npm >nul 2>nul
@@ -21,7 +21,7 @@ if not exist node_modules (
   )
 )
 
-echo Starting Tether Tool...
+echo Starting Wrangle...
 call npm start
 if errorlevel 1 (
   echo.

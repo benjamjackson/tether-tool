@@ -14,6 +14,7 @@ const on = (channel) => (fn) => {
 };
 
 contextBridge.exposeInMainWorld('tether', {
+  platform: process.platform,
   defaults: () => call('defaults'),
   pickFolder: (title) => call('pickFolder', title),
   previewName: (input) => call('previewName', input),

@@ -217,6 +217,11 @@ class Engine extends EventEmitter {
 
   setCameraFolder(cam, folder) {
     const dir = path.resolve(folder);
+    const existing = this.db.prepare('SELECT folder FROM camera_folders WHERE camera_key = ?').get(cam.key);
+    if (existing && existing.folder === dir) {
+      this.watchCameraFolders();
+      return;
+    }
     const inside = (a, b) => a === b || a.startsWith(b + path.sep);
     if (this.session) {
       for (const d of this.session.destinations) {

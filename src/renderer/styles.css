@@ -191,3 +191,6 @@ button.link { background: none; border: none; color: var(--accent); padding: 4px
 
 .drive.camera { cursor: pointer; background: transparent; font: inherit; font-size: 13px; font-weight: 600; }
 .drive.camera.bad { background: var(--bad); }
+.tethered { display: inline-flex; gap: 6px; align-items: center; }
+.tethered .primary { padding: 4px 14px; font-weight: 700; }
+.drive.muted-chip { border-color: var(--line); color: var(--muted); font-weight: 500; }

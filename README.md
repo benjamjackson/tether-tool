@@ -57,20 +57,27 @@ npm start
 
 ## Tethered cameras
 
-When a camera is plugged in by USB, it shows up by name in the top bar (for example
-"Sony a7 IV"). The first time, click it and choose the folder that camera's tether
-program saves into:
+### Sony (direct, Mac)
 
-- **Sony:** Imaging Edge Desktop (Remote). Set the camera's USB mode to *PC Remote*.
-- **Fujifilm:** FUJIFILM X Acquire.
+Tether Tool talks to Sony cameras directly through Sony's Camera Remote SDK, the way
+Capture One does. No other program is needed.
 
-The app remembers that folder for that camera model and watches it in every session.
-Only frames that arrive after the session opens are taken in, so older files in that
-folder from other jobs are left alone. If the camera drops off mid-shoot, the top bar
-turns amber and says so.
+1. The first time you start the app on a Mac, the launcher asks to install Apple's
+   free Command Line Tools. Click **Install**, wait, then start the app again.
+2. On the camera, plug in the USB cable and choose **Remote Shoot (PC Remote)** when
+   asked. Close Capture One and Imaging Edge, since only one program can control the
+   camera at a time.
+3. Open a session. The top bar shows "Sony a7 IV tethered" and a **Shoot** button.
+   Press **Space** or the shutter button on the camera. Each frame is copied to this
+   Mac, named into the capture location, backed up, and also kept on the camera's card.
 
-The app doesn't control the camera itself yet. Shooting still happens through the
-brand's program or the camera's shutter button.
+### Other cameras
+
+When another camera is plugged in by USB, it shows up by name in the top bar. Click it
+and choose the folder that camera's tether program saves into (for Fujifilm, **FUJIFILM
+X Acquire**). The app remembers that folder for that camera model and watches it in every
+session. Only frames that arrive after the session opens are taken in, so older files in
+that folder are left alone. If a camera drops off mid-shoot, the top bar turns amber.
 
 ## What it guarantees
 

@@ -21,5 +21,18 @@ if [ ! -d node_modules ]; then
   npm install || fail
 fi
 
+# Sony tethering needs a small helper built on this Mac with Apple's free
+# Command Line Tools. Without them the app still runs, just without Sony control.
+if [ -f native/sony/build-mac.sh ]; then
+  if ! xcode-select -p >/dev/null 2>&1; then
+    echo "Sony tethering needs Apple's Command Line Tools."
+    echo "A window will open: click Install, wait for it to finish, then double-click this file again."
+    xcode-select --install >/dev/null 2>&1 || true
+    read -r -p "Press Return to start Tether Tool without Sony tethering for now."
+  else
+    bash native/sony/build-mac.sh || echo "Sony tethering could not be set up. The app will still start; send Claude a screenshot of this window."
+  fi
+fi
+
 echo "Starting Tether Tool..."
 npm start || fail

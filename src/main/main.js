@@ -7,7 +7,8 @@ const { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } = require('e
 const { open } = require('../core/db');
 const { Engine } = require('../core/engine');
 const preview = require('../core/preview');
-const { CameraMonitor } = require('../core/cameras');
+const { CameraMonitor, sonyCamera } = require('../core/cameras');
+const { SonyTether } = require('./sony');
 const { DEFAULT_FILE_TEMPLATE, DEFAULT_FOLDER_TEMPLATE, DATE_FORMATS, buildTarget, unknownTokens } = require('../core/naming');
 const { DEFAULT_LABELS } = require('../core/xmp');
 
@@ -17,6 +18,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'tether', privileges: { standard
 let win = null;
 let engine = null;
 let cameras = null;
+let sony = null;
 
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
@@ -62,10 +64,38 @@ function wireEngine() {
   engine.on('session', (s) => { send('session', s); pushStats(); });
   engine.on('cameras', (c) => { send('cameras', c); pushStats(); });
 
+  // Cameras seen on USB, plus a Sony camera connected through Sony's SDK.
+  let usbCameras = [];
+  let sonyCam = null;
+  const publishCameras = () => {
+    const list = usbCameras.filter((c) => !sonyCam || c.key !== sonyCam.key);
+    engine.updateCameras(sonyCam ? [...list, sonyCam] : list);
+  };
+
   cameras = new CameraMonitor();
-  cameras.on('change', (list) => engine.updateCameras(list));
+  cameras.on('change', (list) => { usbCameras = list; publishCameras(); });
   cameras.on('error', (err) => console.warn('Camera check failed:', err.message));
   cameras.start();
+
+  // Frames shot on a tethered Sony land in this folder, which the session
+  // watches like any other tether folder, and are also queued straight away.
+  const sonyInbox = path.join(dataDir, 'Sony Tether Inbox');
+  sony = new SonyTether({ saveDir: sonyInbox });
+  sony.on('state', (st) => send('sony', st));
+  sony.on('connected', (model) => {
+    sonyCam = { ...sonyCamera(model), tethered: true };
+    try {
+      engine.setCameraFolder(sonyCam, sonyInbox);
+    } catch (err) {
+      send('sony', { ...sony.state, message: err.message });
+    }
+    publishCameras();
+  });
+  sony.on('disconnected', () => { sonyCam = null; publishCameras(); });
+  sony.on('file', (file) => { if (engine.session) engine.enqueue(file); });
+  sony.on('warning', (msg) => { if (engine.session) engine.logEvent('warning', `Sony: ${msg}`); });
+  sony.on('log', (text) => console.warn('[sony-tether]', text.trim()));
+  sony.start();
 
   protocol.handle('tether', (req) => {
     const file = new URL(req.url).searchParams.get('f') || '';
@@ -115,6 +145,8 @@ function wireEngine() {
     return 'data:image/png;base64,' + (await preview.clippingMask(a.previewPath)).toString('base64');
   });
   handle('cameras', () => engine.cameraState());
+  handle('sonyState', () => sony.state);
+  handle('sonyShoot', () => sony.shoot());
   handle('chooseCameraFolder', async (cam) => {
     const r = await dialog.showOpenDialog(win, {
       title: `Folder where ${cam.name}'s tether program saves`,
@@ -145,6 +177,7 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', async () => {
   if (cameras) cameras.stop();
+  if (sony) sony.stop();
   if (engine) await engine.close();
   await preview.closeExiftool();
 });

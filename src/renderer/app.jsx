@@ -151,12 +151,25 @@ function Setup({ onOpen }) {
 
 // ---------------------------------------------------------------- status
 
-function CameraChips({ cameras, onError }) {
+function SonyChip({ sony, onError }) {
+  if (!sony || ['off', 'unavailable'].includes(sony.status) || sony.status === 'connected') return null;
+  if (sony.message) return <span className="drive warn" title={sony.message}>Sony: {sony.message}</span>;
+  const text = sony.status === 'connecting' ? `Connecting to ${sony.model}…` : 'Looking for a Sony camera';
+  return <span className="drive muted-chip">{text}</span>;
+}
+
+function CameraChips({ cameras, sony, onError }) {
   const choose = (cam) => api.chooseCameraFolder(cam).catch(onError);
   return (
     <div className="drives">
+      <SonyChip sony={sony} onError={onError} />
       {cameras.connected.map((c) => (
-        c.folder ? (
+        c.tethered ? (
+          <span key={c.key} className="tethered">
+            <span className="drive ok">● {c.name} tethered</span>
+            <button className="primary" title="Take a picture (Space)" onClick={() => api.sonyShoot().catch(onError)}>Shoot</button>
+          </span>
+        ) : c.folder ? (
           <button key={c.key + c.serial} className="drive ok camera" title={`Watching ${c.folder}. Click to change.`} onClick={() => choose(c)}>
             ● {c.name}
           </button>
@@ -175,7 +188,7 @@ function CameraChips({ cameras, onError }) {
   );
 }
 
-function StatusBar({ session, stats, onRetryAll, onClose, onError }) {
+function StatusBar({ session, stats, sony, onRetryAll, onClose, onError }) {
   const badHealth = stats.health.filter((h) => !h.ok);
   const lowSpace = stats.health.filter((h) => h.ok && h.lowSpace);
   const cameras = stats.cameras || { connected: [], missing: [] };
@@ -200,7 +213,7 @@ function StatusBar({ session, stats, onRetryAll, onClose, onError }) {
       </div>
       <div className="status-text">{text}</div>
       {stats.errors > 0 && <button className="danger" onClick={onRetryAll}>Retry failed copies</button>}
-      <CameraChips cameras={cameras} onError={onError} />
+      <CameraChips cameras={cameras} sony={sony} onError={onError} />
       <div className="drives">
         {stats.health.map((h) => (
           <span key={h.dir} className={`drive ${h.ok ? (h.lowSpace ? 'warn' : 'ok') : 'bad'}`} title={h.dir}>
@@ -389,6 +402,7 @@ function SessionView({ id, onClose }) {
   const [showClip, setShowClip] = useState(false);
   const [follow, setFollow] = useState(true);
   const [toast, setToast] = useState(null);
+  const [sony, setSony] = useState(null);
 
   const fail = (err) => setToast(err.message || String(err));
 
@@ -406,7 +420,9 @@ function SessionView({ id, onClose }) {
       })),
       api.onStats(({ stats: s, locations: l }) => { setStats(s); setLocations(l); }),
       api.onSession(setSession),
+      api.onSony(setSony),
     ];
+    api.sonyState().then(setSony).catch(() => {});
     return () => { alive = false; offs.forEach((off) => off()); api.closeSession(); };
   }, [id]);
 
@@ -434,6 +450,7 @@ function SessionView({ id, onClose }) {
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); setFollow(false); const n = visible[Math.max(0, i - 1)]; if (n) setSelectedId(n.id); }
       else if (e.key === 'Enter' && selected) setMode(mode === 'grid' ? 'view' : 'grid');
       else if (e.key === 'g' || e.key === 'Escape') { setMode('grid'); setCompareId(null); }
+      else if (e.key === ' ') { e.preventDefault(); api.sonyShoot().catch(() => {}); }
       else if (e.key === 'c') setShowClip((s) => !s);
       else if (e.key === 'f') setFollow((f) => !f);
       else if (e.key === 'x' && selected) { setCompareId(compareId ? null : selected.id); setMode('view'); }
@@ -451,7 +468,7 @@ function SessionView({ id, onClose }) {
 
   return (
     <div className="session">
-      <StatusBar session={session} stats={stats} onRetryAll={() => api.retryAll().catch(fail)} onClose={onClose} onError={fail} />
+      <StatusBar session={session} stats={stats} sony={sony} onRetryAll={() => api.retryAll().catch(fail)} onClose={onClose} onError={fail} />
       <div className="panels">
         <aside className="panel left">
           <ToneTools asset={selected} analysis={analysis} showClip={showClip} setShowClip={setShowClip} />
@@ -503,7 +520,7 @@ function SessionView({ id, onClose }) {
             </div>
           )}
           <div className="center-footer muted small">
-            Enter view · ←→ move · 1–3 stars · 0 clear · 6–9 color label · X compare · C clipping · F follow new frames {follow ? '(on)' : '(off)'}
+            Space shoot (Sony) · Enter view · ←→ move · 1–3 stars · 0 clear · 6–9 color label · X compare · C clipping · F follow new frames {follow ? '(on)' : '(off)'}
           </div>
         </main>
 

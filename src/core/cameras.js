@@ -168,4 +168,9 @@ class CameraMonitor extends EventEmitter {
   }
 }
 
-module.exports = { CameraMonitor, cameraKey, displayName, listCameras, parseMac, parseWindows, VENDORS };
+// A Sony camera reported by Sony's own SDK, by model code (e.g. ILCE-7M4).
+function sonyCamera(model) {
+  return camera(0x054c, model, null);
+}
+
+module.exports = { CameraMonitor, cameraKey, sonyCamera, displayName, listCameras, parseMac, parseWindows, VENDORS };

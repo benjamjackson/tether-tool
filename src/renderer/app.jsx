@@ -81,6 +81,8 @@ function Setup({ onOpen }) {
   if (!defaults) return null;
   return (
     <div className="setup">
+      <header className="titlebar"><span className="wordmark">Wrangle</span></header>
+      <div className="setup-body">
       <form className="setup-form" onSubmit={submit}>
         <h1>New session</h1>
         <div className="row">
@@ -100,7 +102,7 @@ function Setup({ onOpen }) {
           <textarea rows={3} value={form.locationsText} onChange={set('locationsText')} placeholder={'Main Salon\nLobby\nSuite 401'} />
         </Field>
 
-        <h2>Where files come from and go</h2>
+        <h2>Drives</h2>
         <FolderPicker label="Watched folder (camera card or tether drop folder)" value={form.sourceDir} onChange={set('sourceDir')} title="Folder to watch for incoming RAWs" />
         {form.destinations.map((d, i) => (
           <FolderPicker key={i} label={i === 0 ? 'Main destination' : `Backup ${i}`} value={d} onChange={setDest(i)} title={i === 0 ? 'Main destination' : 'Backup destination'} />
@@ -131,7 +133,7 @@ function Setup({ onOpen }) {
           {example?.error ? <span className="bad">{example.error}</span> : <code>{example?.relPath}</code>}
         </div>
         {error && <pre className="form-error">{error}</pre>}
-        <button className="primary big" type="submit">Start session</button>
+        <div className="form-actions"><button className="primary big" type="submit">Start session</button></div>
       </form>
 
       {sessions.length > 0 && (
@@ -139,12 +141,14 @@ function Setup({ onOpen }) {
           <h2>Recent sessions</h2>
           {sessions.map((s) => (
             <button key={s.id} className="recent-item" onClick={() => onOpen(s.id)}>
-              <strong>{s.client}</strong> {s.job && <span>· {s.job}</span>}
-              <span className="muted">{s.date} · {s.assetCount} frames</span>
+              <span className="recent-name"><strong>{s.client}</strong>{s.job && <span className="muted"> {s.job}</span>}</span>
+              <span className="recent-meta mono">{s.date}</span>
+              <span className="recent-meta mono">{s.assetCount}</span>
             </button>
           ))}
         </aside>
       )}
+      </div>
     </div>
   );
 }
@@ -153,9 +157,9 @@ function Setup({ onOpen }) {
 
 function SonyChip({ sony, onError }) {
   if (!sony || ['off', 'unavailable'].includes(sony.status) || sony.status === 'connected') return null;
-  if (sony.message) return <span className="drive warn" title={sony.message}>Sony: {sony.message}</span>;
+  if (sony.message) return <span className="drive warn" title={sony.message}><i className="led" />Sony: {sony.message}</span>;
   const text = sony.status === 'connecting' ? `Connecting to ${sony.model}…` : 'Looking for a Sony camera';
-  return <span className="drive muted-chip">{text}</span>;
+  return <span className="drive muted-chip"><i className="led" />{text}</span>;
 }
 
 function CameraChips({ cameras, sony, onError }) {
@@ -166,12 +170,12 @@ function CameraChips({ cameras, sony, onError }) {
       {cameras.connected.map((c) => (
         c.tethered ? (
           <span key={c.key} className="tethered">
-            <span className="drive ok">● {c.name} tethered</span>
+            <span className="drive ok"><i className="led" />{c.name} tethered</span>
             <button className="primary" title="Take a picture (Space)" onClick={() => api.sonyShoot().catch(onError)}>Shoot</button>
           </span>
         ) : c.folder ? (
           <button key={c.key + c.serial} className="drive ok camera" title={`Watching ${c.folder}. Click to change.`} onClick={() => choose(c)}>
-            ● {c.name}
+            <i className="led" />{c.name}
           </button>
         ) : (
           <button key={c.key + c.serial} className="drive warn camera" onClick={() => choose(c)}>
@@ -181,7 +185,7 @@ function CameraChips({ cameras, sony, onError }) {
       ))}
       {cameras.missing.map((c) => (
         <button key={c.key} className="drive bad camera" title="Click to dismiss" onClick={() => api.dismissMissingCamera(c.key)}>
-          {c.name} disconnected ✕
+          <i className="led" />{c.name} disconnected ✕
         </button>
       ))}
     </div>
@@ -208,16 +212,17 @@ function StatusBar({ session, stats, sony, onRetryAll, onClose, onError }) {
     <header className={`status status-${state}`}>
       <button className="ghost" onClick={onClose} title="Back to sessions">‹</button>
       <div className="status-session">
-        <strong>{session.client}</strong> {session.job && <span>· {session.job}</span>}
-        <span className="muted"> · {session.date}</span>
+        <strong>{session.client}</strong>{session.job && <span className="muted"> {session.job}</span>}
+        <span className="muted mono"> {session.date}</span>
       </div>
-      <div className="status-text">{text}</div>
+      <div className="status-text"><i className="led" />{text}</div>
+      <div className="spacer" />
       {stats.errors > 0 && <button className="danger" onClick={onRetryAll}>Retry failed copies</button>}
       <CameraChips cameras={cameras} sony={sony} onError={onError} />
       <div className="drives">
         {stats.health.map((h) => (
           <span key={h.dir} className={`drive ${h.ok ? (h.lowSpace ? 'warn' : 'ok') : 'bad'}`} title={h.dir}>
-            {h.label} {h.ok ? (h.label === 'Watched folder' ? '' : gb(h.freeBytes)) : '✕'}
+            <i className="led" />{h.label}{h.ok ? (h.label === 'Watched folder' ? '' : <b className="mono">{gb(h.freeBytes)}</b>) : <b>missing</b>}
           </span>
         ))}
       </div>
@@ -257,8 +262,8 @@ function ToneTools({ asset, analysis, showClip, setShowClip }) {
       <Histogram data={analysis} />
       {asset && analysis && (
         <div className="clip-stats">
-          <div className={hi > 0.5 ? 'clip warn' : 'clip'}><span>Highlights clipped</span><strong>{hi.toFixed(1)}%</strong></div>
-          <div className={lo > 0.5 ? 'clip warn' : 'clip'}><span>Shadows clipped</span><strong>{lo.toFixed(1)}%</strong></div>
+          <div className={hi > 0.5 ? 'clip warn' : 'clip'}><span>Highlights clipped</span><strong className="mono">{hi.toFixed(1)}%</strong></div>
+          <div className={lo > 0.5 ? 'clip warn' : 'clip'}><span>Shadows clipped</span><strong className="mono">{lo.toFixed(1)}%</strong></div>
         </div>
       )}
       <label className="toggle"><input type="checkbox" checked={showClip} onChange={(e) => setShowClip(e.target.checked)} /> Show clipping on image (C)</label>
@@ -272,10 +277,10 @@ function Dashboard({ stats }) {
     <section className="panel-section">
       <h3>Session</h3>
       <div className="tiles">
-        <div className="tile"><strong>{stats.total}</strong><span>frames</span></div>
-        <div className="tile"><strong>{stats.backedUp}</strong><span>backed up</span></div>
-        <div className={`tile ${stats.errors ? 'bad' : ''}`}><strong>{stats.errors}</strong><span>problems</span></div>
-        <div className="tile"><strong>{stats.perMinute}</strong><span>per min</span></div>
+        <div className="tile"><span>Frames</span><strong>{stats.total}</strong></div>
+        <div className="tile"><span>Backed up</span><strong>{stats.backedUp}</strong></div>
+        <div className={`tile ${stats.errors ? 'bad' : ''}`}><span>Problems</span><strong>{stats.errors}</strong></div>
+        <div className="tile"><span>Per minute</span><strong>{stats.perMinute}</strong></div>
       </div>
     </section>
   );
@@ -287,7 +292,7 @@ function EventLog({ events, onClear }) {
       <h3>Log <button className="link small" onClick={onClear}>Clear</button></h3>
       <ul>
         {events.map((e) => (
-          <li key={e.id} className={`event ${e.level}`}><span className="muted">{e.createdAt.slice(11, 16)}</span> {e.message}</li>
+          <li key={e.id} className={`event ${e.level}`}><span className="muted mono">{e.createdAt.slice(11, 16)}</span> {e.message}</li>
         ))}
       </ul>
     </section>
@@ -306,6 +311,8 @@ function Stars({ rating, onSet }) {
   );
 }
 
+const SHORTCUTS = [['Space', 'Shoot (Sony)'], ['Enter', 'View'], ['← →', 'Move'], ['1–3', 'Stars'], ['0', 'Clear'], ['6–9', 'Label'], ['X', 'Compare'], ['C', 'Clipping']];
+
 const STATUS_TEXT = { ingesting: 'Copying', verified: 'Verified', backed_up: 'Backed up', error: 'Problem' };
 
 function Thumb({ asset, selected, onSelect, onOpen, onReview }) {
@@ -316,7 +323,7 @@ function Thumb({ asset, selected, onSelect, onOpen, onReview }) {
         <span className={`badge ${asset.status}`}>{STATUS_TEXT[asset.status]}</span>
       </div>
       <div className="thumb-meta">
-        <span className="name" title={`${asset.fileName} (camera: ${asset.originalName})`}><bdi>{asset.fileName}</bdi></span>
+        <span className="name mono" title={`${asset.fileName} (camera: ${asset.originalName})`}><bdi>{asset.fileName}</bdi></span>
         <Stars rating={asset.rating} onSet={(r) => onReview({ rating: r })} />
       </div>
     </div>
@@ -338,7 +345,7 @@ function Viewer({ asset, showClip, compareWith, onClose }) {
         <img src={img(a.previewPath)} />
         {m && <img className="clip-mask" src={m} />}
       </div>
-      <div className="viewer-caption">{a.fileName} <span className="muted">· {a.originalName}</span></div>
+      <div className="viewer-caption mono">{a.fileName} <span className="muted">{a.originalName}</span></div>
     </div>
   );
   return (
@@ -358,11 +365,15 @@ function Finder({ session, locations, viewing, setViewing, onAdd, onCapture }) {
   const total = locations.reduce((n, l) => n + l.count, 0);
   return (
     <section className="panel-section finder">
+      <div className="capturing">
+        <span className="capturing-label"><i className="led" />Capturing into</span>
+        <strong>{session.activeLocation}</strong>
+      </div>
       <h3>Locations</h3>
       <div className={`tree-row root ${viewing === null ? 'viewing' : ''}`} onClick={() => setViewing(null)}>
         <button className="chevron" onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>{open ? '▾' : '▸'}</button>
         <span className="tree-name">{session.client}</span>
-        <span className="count">{total}</span>
+        <span className="count mono">{total}</span>
       </div>
       {open && locations.map((l) => (
         <div key={l.name} className={`tree-row child ${viewing === l.name ? 'viewing' : ''}`} onClick={() => setViewing(l.name)}>
@@ -372,17 +383,13 @@ function Finder({ session, locations, viewing, setViewing, onAdd, onCapture }) {
             onClick={(e) => { e.stopPropagation(); onCapture(l.name); }}
           />
           <span className="tree-name">{l.name}</span>
-          <span className="count">{l.count}</span>
+          <span className="count mono">{l.count}</span>
         </div>
       ))}
       <form className="add-location" onSubmit={(e) => { e.preventDefault(); if (name.trim()) { onAdd(name); setName(''); } }}>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="New location…" />
         <button type="submit">Add</button>
       </form>
-      <div className="capturing">
-        <span className="muted">Capturing into</span>
-        <strong>{session.activeLocation}</strong>
-      </div>
     </section>
   );
 }
@@ -477,8 +484,8 @@ function SessionView({ id, onClose }) {
             <section className="panel-section">
               <h3>Frame</h3>
               <div className="frame-info">
-                <div><span className="muted">Name</span> {selected.fileName}</div>
-                <div><span className="muted">Camera name</span> {selected.originalName}</div>
+                <div><span className="muted">Name</span> <span className="mono">{selected.fileName}</span></div>
+                <div><span className="muted">Camera name</span> <span className="mono">{selected.originalName}</span></div>
                 {selected.copies.map((c) => (
                   <div key={c.destinationId} className={c.status === 'verified' ? '' : 'bad'}>
                     <span className="muted">{c.role === 'primary' ? 'Main' : 'Backup'}</span> {c.status === 'verified' ? 'Checksum verified' : c.error || c.status}
@@ -519,8 +526,9 @@ function SessionView({ id, onClose }) {
               <p className="muted">New frames are named into <strong>{session.activeLocation}</strong>.</p>
             </div>
           )}
-          <div className="center-footer muted small">
-            Space shoot (Sony) · Enter view · ←→ move · 1–3 stars · 0 clear · 6–9 color label · X compare · C clipping · F follow new frames {follow ? '(on)' : '(off)'}
+          <div className="center-footer">
+            {SHORTCUTS.map(([k, what]) => <span key={k}><kbd>{k}</kbd>{what}</span>)}
+            <span className={follow ? 'follow on' : 'follow'}><kbd>F</kbd>Follow new frames {follow ? 'on' : 'off'}</span>
           </div>
         </main>
 

@@ -151,13 +151,39 @@ function Setup({ onOpen }) {
 
 // ---------------------------------------------------------------- status
 
-function StatusBar({ session, stats, onRetryAll, onClose }) {
+function CameraChips({ cameras, onError }) {
+  const choose = (cam) => api.chooseCameraFolder(cam).catch(onError);
+  return (
+    <div className="drives">
+      {cameras.connected.map((c) => (
+        c.folder ? (
+          <button key={c.key + c.serial} className="drive ok camera" title={`Watching ${c.folder}. Click to change.`} onClick={() => choose(c)}>
+            ● {c.name}
+          </button>
+        ) : (
+          <button key={c.key + c.serial} className="drive warn camera" onClick={() => choose(c)}>
+            {c.name}: choose its tether folder
+          </button>
+        )
+      ))}
+      {cameras.missing.map((c) => (
+        <button key={c.key} className="drive bad camera" title="Click to dismiss" onClick={() => api.dismissMissingCamera(c.key)}>
+          {c.name} disconnected ✕
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StatusBar({ session, stats, onRetryAll, onClose, onError }) {
   const badHealth = stats.health.filter((h) => !h.ok);
   const lowSpace = stats.health.filter((h) => h.ok && h.lowSpace);
+  const cameras = stats.cameras || { connected: [], missing: [] };
   let state = 'ok';
   let text = stats.total ? `All safe · ${stats.backedUp} frames on every drive` : 'Waiting for the first frame';
   if (stats.ingesting) { state = 'busy'; text = `Copying · ${stats.ingesting} in progress`; }
   if (lowSpace.length) { state = 'warn'; text = `Low space on ${lowSpace.map((h) => h.label).join(', ')}`; }
+  if (cameras.missing.length) { state = 'warn'; text = `${cameras.missing.map((c) => c.name).join(', ')} disconnected · check the cable`; }
   if (stats.errors || badHealth.length) {
     state = 'error';
     const parts = [];
@@ -174,6 +200,7 @@ function StatusBar({ session, stats, onRetryAll, onClose }) {
       </div>
       <div className="status-text">{text}</div>
       {stats.errors > 0 && <button className="danger" onClick={onRetryAll}>Retry failed copies</button>}
+      <CameraChips cameras={cameras} onError={onError} />
       <div className="drives">
         {stats.health.map((h) => (
           <span key={h.dir} className={`drive ${h.ok ? (h.lowSpace ? 'warn' : 'ok') : 'bad'}`} title={h.dir}>
@@ -424,7 +451,7 @@ function SessionView({ id, onClose }) {
 
   return (
     <div className="session">
-      <StatusBar session={session} stats={stats} onRetryAll={() => api.retryAll().catch(fail)} onClose={onClose} />
+      <StatusBar session={session} stats={stats} onRetryAll={() => api.retryAll().catch(fail)} onClose={onClose} onError={fail} />
       <div className="panels">
         <aside className="panel left">
           <ToneTools asset={selected} analysis={analysis} showClip={showClip} setShowClip={setShowClip} />

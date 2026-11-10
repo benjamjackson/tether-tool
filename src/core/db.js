@@ -68,6 +68,12 @@ CREATE TABLE IF NOT EXISTS asset_review (
   flagged INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS camera_folders (
+  camera_key TEXT PRIMARY KEY,         -- e.g. "Sony:ILCE-7M4"; shared by every session
+  name TEXT NOT NULL,
+  folder TEXT NOT NULL,                -- where that camera's tether program saves
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS integrity_events (
   id INTEGER PRIMARY KEY,
   session_id INTEGER NOT NULL REFERENCES sessions(id),

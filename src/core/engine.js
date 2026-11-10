@@ -54,6 +54,10 @@ class Engine extends EventEmitter {
     this.busy = false;
     this.healthTimer = null;
     this.health = [];
+    this.cameraWatcher = null;
+    this.cameraFolderList = [];
+    this.connectedCameras = [];
+    this.missingCameras = new Map(); // key -> camera that dropped off mid-session
   }
 
   // ---------- sessions ----------
@@ -199,6 +203,92 @@ class Engine extends EventEmitter {
       this.emit('watching', sourceDir);
     });
     this.watcher.on('error', (err) => this.logEvent('error', `Watching ${sourceDir} failed: ${err.message}`));
+    this.watchCameraFolders();
+  }
+
+  // ---------- cameras ----------
+  // Each camera model remembers the folder its tether program saves into.
+  // Those folders are watched for the whole session, for new files only, so
+  // older shots already sitting there from other jobs are never pulled in.
+
+  cameraFolders() {
+    return this.db.prepare('SELECT camera_key AS key, name, folder FROM camera_folders ORDER BY name').all();
+  }
+
+  setCameraFolder(cam, folder) {
+    const dir = path.resolve(folder);
+    const inside = (a, b) => a === b || a.startsWith(b + path.sep);
+    if (this.session) {
+      for (const d of this.session.destinations) {
+        if (inside(path.resolve(d.root), dir) || inside(dir, path.resolve(d.root))) {
+          throw new Error('The tether folder must be separate from the main and backup folders.');
+        }
+      }
+    }
+    this.db.prepare(`
+      INSERT INTO camera_folders (camera_key, name, folder, updated_at) VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(camera_key) DO UPDATE SET name = excluded.name, folder = excluded.folder, updated_at = excluded.updated_at`)
+      .run(cam.key, cam.name, dir);
+    if (this.session) {
+      this.logEvent('info', `${cam.name}: watching ${dir}`);
+      this.watchCameraFolders();
+    }
+    this.emit('cameras', this.cameraState());
+  }
+
+  watchCameraFolders() {
+    if (!this.session) return;
+    const folders = [...new Set(this.cameraFolders().map((c) => c.folder))]
+      .filter((f) => path.resolve(f) !== path.resolve(this.session.sourceDir));
+    if (this.cameraWatcher) {
+      const add = folders.filter((f) => !this.cameraFolderList.includes(f));
+      if (add.length) this.cameraWatcher.add(add);
+      this.cameraFolderList.push(...add);
+      return;
+    }
+    if (!folders.length) return;
+    this.cameraFolderList = folders;
+    this.cameraWatcher = chokidar.watch(folders, {
+      ignoreInitial: true,
+      depth: 4,
+      ignored: (p) => path.basename(p).startsWith('.'),
+      awaitWriteFinish: { stabilityThreshold: 1200, pollInterval: 200 },
+    });
+    this.cameraWatcher.on('add', (file) => {
+      if (isRaw(file)) this.enqueue(file);
+    });
+    this.cameraWatcher.on('error', (err) => this.logEvent('error', `Watching a tether folder failed: ${err.message}`));
+  }
+
+  // Called by the camera monitor with the cameras connected right now.
+  updateCameras(list) {
+    const before = new Map(this.connectedCameras.map((c) => [c.key, c]));
+    const now = new Map(list.map((c) => [c.key, c]));
+    for (const c of list) {
+      if (!before.has(c.key) && this.session) this.logEvent('info', `${c.name} connected`);
+      this.missingCameras.delete(c.key);
+    }
+    for (const c of this.connectedCameras) {
+      if (!now.has(c.key) && this.session) {
+        this.logEvent('warning', `${c.name} disconnected`);
+        this.missingCameras.set(c.key, c);
+      }
+    }
+    this.connectedCameras = list;
+    this.emit('cameras', this.cameraState());
+  }
+
+  dismissMissingCamera(key) {
+    this.missingCameras.delete(key);
+    this.emit('cameras', this.cameraState());
+  }
+
+  cameraState() {
+    const folders = new Map(this.cameraFolders().map((c) => [c.key, c.folder]));
+    return {
+      connected: this.connectedCameras.map((c) => ({ ...c, folder: folders.get(c.key) || null })),
+      missing: [...this.missingCameras.values()],
+    };
   }
 
   enqueue(file) {
@@ -440,6 +530,7 @@ class Engine extends EventEmitter {
       perMinute: Math.round((lastTen / 10) * 10) / 10,
       bytes,
       health: this.health,
+      cameras: this.cameraState(),
       lastEvents: this.events(20),
     };
   }
@@ -491,6 +582,10 @@ class Engine extends EventEmitter {
     this.healthTimer = null;
     if (this.watcher) await this.watcher.close();
     this.watcher = null;
+    if (this.cameraWatcher) await this.cameraWatcher.close();
+    this.cameraWatcher = null;
+    this.cameraFolderList = [];
+    this.missingCameras.clear();
     this.queue = [];
     this.queued.clear();
     this.session = null;

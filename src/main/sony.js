@@ -1,13 +1,15 @@
 'use strict';
 // Runs the Sony tether helper (native/sony) and turns its output into
-// events: 'state' with { status, model, message }, and 'file' with the path
-// of each frame the camera hands over. Restarts the helper if it stops.
+// events: 'state' with { status, model, message }, 'file' with the path
+// of each frame the camera hands over, and 'settings' with the camera's
+// shooting settings (aperture, shutter, ...). Restarts the helper if it stops.
 
 const EventEmitter = require('node:events');
 const fs = require('node:fs');
 const path = require('node:path');
 const readline = require('node:readline');
 const { spawn } = require('node:child_process');
+const { CODES, CONTROLS, INFO, describe, shotPlan } = require('../core/sony-controls');
 
 const HELPER = path.join(__dirname, '..', '..', 'native', 'sony', 'bin', 'sony-tether');
 
@@ -21,6 +23,7 @@ class SonyTether extends EventEmitter {
     this.stopped = true;
     this.restartDelay = 1000;
     this.state = { status: 'off', model: null, message: null };
+    this.props = new Map(); // raw settings from the camera, by code
   }
 
   available() {
@@ -49,6 +52,7 @@ class SonyTether extends EventEmitter {
     child.on('error', (err) => this.setState({ status: 'error', model: null, message: err.message }));
     child.on('exit', () => {
       this.child = null;
+      this.clearSettings();
       if (this.state.model) this.emit('disconnected', this.state.model);
       if (this.stopped) return;
       this.setState({ status: 'restarting', model: null, message: null });
@@ -77,8 +81,13 @@ class SonyTether extends EventEmitter {
         this.emit('connected', msg.model);
         break;
       case 'disconnected':
+        this.clearSettings();
         this.emit('disconnected', msg.model);
         this.setState({ status: 'searching', model: null, message: null });
+        break;
+      case 'props':
+        for (const p of msg.props || []) this.props.set(p.code, p);
+        this.emit('settings', this.settings());
         break;
       case 'file':
         if (msg.path) this.emit('file', msg.path);
@@ -100,8 +109,38 @@ class SonyTether extends EventEmitter {
     this.emit('state', next);
   }
 
+  // { controls: [...], info: { battery, shotsLeft } } for the interface.
+  settings() {
+    const byKey = {};
+    for (const p of this.props.values()) {
+      const d = describe(p);
+      if (d) byKey[d.key] = d;
+    }
+    const controls = CONTROLS.filter(([key]) => byKey[key]).map(([key, label]) => ({ ...byKey[key], label }));
+    // Kelvin only matters when white balance is set to it.
+    const wb = byKey.wb;
+    const shown = controls.filter((c) => c.key !== 'kelvin' || !wb || wb.display === 'Kelvin');
+    const info = Object.fromEntries(INFO.filter((k) => byKey[k]).map((k) => [k, byKey[k].display]));
+    return { controls: shown, info, plan: shotPlan(byKey) };
+  }
+
+  clearSettings() {
+    if (!this.props.size) return;
+    this.props.clear();
+    this.emit('settings', this.settings());
+  }
+
+  setSetting(key, value) {
+    const code = CODES[key];
+    if (code === undefined || !Number.isInteger(value)) throw new Error(`Unknown camera setting ${key}`);
+    if (!this.child || this.state.status !== 'connected') throw new Error('No Sony camera connected');
+    this.child.stdin.write(`set ${code} ${value}\n`);
+  }
+
   shoot() {
-    if (this.child && this.state.status === 'connected') this.child.stdin.write('shoot\n');
+    if (!this.child || this.state.status !== 'connected') return;
+    const { holdMs, count, gapMs } = this.settings().plan;
+    this.child.stdin.write(`shoot ${holdMs} ${count} ${gapMs}\n`);
   }
 
   stop() {

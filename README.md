@@ -72,6 +72,13 @@ Capture One does. No other program is needed.
 3. Open a session. The top bar shows "Sony a7 IV tethered" and a **Shoot** button.
    Press **Space** or the shutter button on the camera. Each frame is copied to this
    Mac, named into the capture location, backed up, and also kept on the camera's card.
+4. The **Camera** panel on the right shows the camera's settings: aperture, shutter,
+   ISO, exposure comp, white balance (and Kelvin), focus mode and drive mode. Click a
+   value to pick from a list, or use ◀ ▶ to step one click. Changes made on the camera
+   show up in the app too. The mode (M, A, S, P) is set with the dial on the camera.
+5. **Bracketing**: choose a bracket in **Drive**. A *Cont. bracket* fires the whole set
+   from one click of **Shoot**; a *Single bracket* is pressed once per frame, and Wrangle
+   does those presses for you, so one click still gives the full set.
 
 ### Other cameras
 

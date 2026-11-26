@@ -1,0 +1,18 @@
+/* Camera shooting controls (right panel). Buttons and dropdowns take their
+   look from styles.css; this file only lays them out, so a restyle there
+   carries over. Square corners, big readable values. */
+.camera-controls { display: flex; flex-direction: column; gap: 10px; }
+.camera-controls h3 { align-items: baseline; }
+.cam-info { display: flex; gap: 10px; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--text); }
+.cam-row { display: flex; flex-direction: column; gap: 3px; }
+.cam-label { font-size: 12px; color: var(--muted); }
+.cam-stepper { display: flex; align-items: stretch; }
+.cam-stepper .cam-select { flex: 1; min-width: 0; text-align: center; text-align-last: center; }
+.cam-select { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 6px 8px; border-radius: var(--radius, 0); cursor: pointer; }
+.cam-step { flex: none; width: 36px; padding: 0; font-size: 12px; border-radius: var(--radius, 0); }
+.cam-step:disabled { opacity: 0.35; cursor: default; }
+.cam-fixed { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 8px; border: 1px dashed var(--line); }
+.cam-value { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: pre; }
+.cam-shoot { width: 100%; margin-top: 4px; font-size: 18px; letter-spacing: 0.04em; border-radius: var(--radius, 0); }
+.cam-note { margin: 0; }
+.cam-row > .cam-select { font-size: 15px; }

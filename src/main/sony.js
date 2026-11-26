@@ -11,7 +11,12 @@ const readline = require('node:readline');
 const { spawn } = require('node:child_process');
 const { CODES, CONTROLS, INFO, describe, shotPlan } = require('../core/sony-controls');
 
-const HELPER = path.join(__dirname, '..', '..', 'native', 'sony', 'bin', 'sony-tether');
+// In the installed app the helper and Sony's libraries sit in the app's
+// Resources/sony folder; when run from the source folder they're in native/sony/bin.
+const PACKAGED_HELPER = process.resourcesPath ? path.join(process.resourcesPath, 'sony', 'sony-tether') : null;
+const HELPER = PACKAGED_HELPER && fs.existsSync(PACKAGED_HELPER)
+  ? PACKAGED_HELPER
+  : path.join(__dirname, '..', '..', 'native', 'sony', 'bin', 'sony-tether');
 
 class SonyTether extends EventEmitter {
   constructor({ saveDir, helper = HELPER, spawnFn = spawn }) {

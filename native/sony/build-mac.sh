@@ -15,7 +15,7 @@ mkdir -p "$BIN/Contents/Frameworks/CrAdapter"
 cp sdk/mac/*.dylib "$BIN/"
 cp sdk/mac/CrAdapter/*.dylib "$BIN/Contents/Frameworks/CrAdapter/"
 
-clang++ -std=c++17 -O2 -mmacosx-version-min=12.1 \
+clang++ -std=c++17 -O2 -mmacosx-version-min=12.1 -arch arm64 -arch x86_64 \
   -I sdk/include sony-tether.cpp \
   -L sdk/mac -lCr_Core -Wl,-rpath,@executable_path \
   -o "$EXE"

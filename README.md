@@ -11,33 +11,41 @@ No editing, no cloud, no accounts. The files, folders and `.xmp` sidecars on you
 are the real record. The app's database is only a working index, so deleting the app
 loses nothing.
 
-## Run it (macOS or Windows)
+## Install it
 
-The same code runs on both. Mac is the main target; Windows works for testing and for
-shoots on a PC.
+Wrangle is built automatically every time a change lands. The newest version is always on
+the repo's **Releases** page (right-hand side of the repo's main page on GitHub).
 
-1. Install [Node.js](https://nodejs.org) 22 or newer (the LTS installer is fine).
-2. Download this repo (green **Code** button, **Download ZIP**) and unzip it.
+**Mac**
 
-**Windows, the easy way:** double-click `Start Wrangle (Windows).bat` in the unzipped
-folder. The first start downloads what the app needs, then the app opens. If Windows says
-"Windows protected your PC", click **More info**, then **Run anyway**.
+1. Find out which chip your Mac has: Apple menu (top left) > **About This Mac**. If it
+   says **Chip: Apple M…**, you want the `Mac-Apple-chip` file. If it says **Intel**, you
+   want the `Mac-Intel` file.
+2. On the Releases page, under the newest release, click that `.dmg` file to download it.
+3. Open the downloaded `.dmg`. Drag **Wrangle** onto the **Applications** folder, then
+   close the window and eject the Wrangle disk in Finder's sidebar.
+4. Open **Applications** and double-click **Wrangle**. The first time, macOS says it
+   can't check the app for malware, because it isn't signed with a paid Apple developer
+   account. Click **Done** (not Move to Trash).
+5. Open **System Settings** > **Privacy & Security**, scroll down to the line that says
+   "Wrangle was blocked", click **Open Anyway**, then **Open Anyway** again and enter your
+   Mac password. (On older macOS you can instead right-click Wrangle, choose **Open**,
+   then **Open**.) You only do this once per new version.
 
-**Mac, the easy way:** double-click `Start Wrangle (Mac).command`. If macOS says it
-can't be opened because it's from an unidentified developer, right-click the file, choose
-**Open**, then **Open** again. You only need to do that once.
+Your sessions and settings carry over between versions; installing a new one just
+replaces the app.
 
-**Or from a terminal:**
+**Windows**
 
-3. Open a terminal in the unzipped folder:
-   - **Mac:** open Terminal, type `cd ` (with a space), drag the folder onto the window, press Return.
-   - **Windows:** open the folder in File Explorer, click the address bar, type `cmd`, press Enter.
-4. Run:
+Download the `Windows-Setup.exe` file from the newest release and double-click it. If
+Windows says "Windows protected your PC", click **More info**, then **Run anyway**.
 
-```sh
-npm install
-npm start
-```
+### Run from the source instead
+
+For trying out unreleased changes. Install [Node.js](https://nodejs.org) 22 or newer,
+download this repo (green **Code** button, **Download ZIP**), unzip it, and double-click
+`Start Wrangle (Mac).command` or `Start Wrangle (Windows).bat`. On a Mac, Sony tethering
+from source also needs Apple's free Command Line Tools, which the launcher offers to install.
 
 ## How a shoot works
 
@@ -64,8 +72,7 @@ npm start
 Wrangle talks to Sony cameras directly through Sony's Camera Remote SDK, the way
 Capture One does. No other program is needed.
 
-1. The first time you start the app on a Mac, the launcher asks to install Apple's
-   free Command Line Tools. Click **Install**, wait, then start the app again.
+1. Nothing extra to install: Sony's libraries come inside the app.
 2. On the camera, plug in the USB cable and choose **Remote Shoot (PC Remote)** when
    asked. Close Capture One and Imaging Edge, since only one program can control the
    camera at a time.

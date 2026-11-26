@@ -6,7 +6,9 @@
   "scripts": {
     "build": "node scripts/build.js",
     "start": "npm run build && electron .",
-    "test": "node --test --test-concurrency=1 test/*.test.js"
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "dist:mac": "npm run build && bash native/sony/build-mac.sh && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -18,10 +20,58 @@
   },
   "devDependencies": {
     "electron": "^44.8.0",
+    "electron-builder": "^26.18.0",
     "esbuild": "^0.28.2"
   },
   "private": true,
   "engines": {
     "node": ">=22.13"
+  },
+  "productName": "Wrangle",
+  "build": {
+    "appId": "com.benjamjackson.wrangle",
+    "productName": "Wrangle",
+    "copyright": "Ben Jackson",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/sharp/**/*",
+      "**/node_modules/@img/**/*",
+      "**/node_modules/exiftool-vendored*/**/*"
+    ],
+    "npmRebuild": false,
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.photography",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "extraResources": [
+        {
+          "from": "native/sony/bin",
+          "to": "sony"
+        }
+      ],
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "Wrangle can connect to Sony cameras over Wi-Fi or Ethernet."
+      }
+    },
+    "dmg": {
+      "title": "Wrangle"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   }
 }

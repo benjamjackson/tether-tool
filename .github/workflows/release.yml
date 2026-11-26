@@ -1,0 +1,103 @@
+name: Build the app
+
+# Builds the installable Mac app (.dmg) and Windows installer (.exe), checks
+# that each one starts, and on every change to main publishes them as a
+# GitHub Release, so the newest version is always under "Releases".
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  VERSION: 0.1.${{ github.run_number }}
+
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+            label: Apple-chip
+          - arch: x64
+            runner: macos-15-intel
+            label: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Build the Sony tether helper
+        run: bash native/sony/build-mac.sh
+      - name: Package the app
+        run: >
+          npx electron-builder --mac dmg --${{ matrix.arch }} --publish never
+          -c.extraMetadata.version=$VERSION
+          -c.artifactName='Wrangle-${version}-Mac-${{ matrix.label }}.${ext}'
+      - name: Check the packaged app
+        run: |
+          APP=$(find release -maxdepth 2 -name Wrangle.app | head -1)
+          echo "App: $APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          "$APP/Contents/Resources/sony/sony-tether" --probe
+          WRANGLE_SMOKE_TEST=1 "$APP/Contents/MacOS/Wrangle"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wrangle-Mac-${{ matrix.label }}
+          path: release/*.dmg
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Package the app
+        shell: bash
+        run: >
+          npx electron-builder --win nsis --x64 --publish never
+          -c.extraMetadata.version=$VERSION
+          -c.artifactName='Wrangle-${version}-Windows-Setup.${ext}'
+      - name: Check the packaged app
+        shell: bash
+        run: WRANGLE_SMOKE_TEST=1 ./release/win-unpacked/Wrangle.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wrangle-Windows
+          path: release/*.exe
+          if-no-files-found: error
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [mac, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Wrangle $VERSION" \
+            --latest \
+            --notes "Mac: download the .dmg for your Mac (Apple menu > About This Mac: 'Apple M…' chip = Apple-chip, 'Intel' = Intel). Windows: download the Setup .exe. Install steps are in the README."

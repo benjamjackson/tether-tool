@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { CameraControls } from './camera-controls';
 
 const api = window.tether;
 const LABELS = ['red', 'yellow', 'green', 'blue', 'purple'];
@@ -525,6 +526,7 @@ function SessionView({ id, onClose }) {
         </main>
 
         <aside className="panel right">
+          <CameraControls sony={sony} onError={fail} />
           <Finder session={session} locations={locations} viewing={viewing} setViewing={setViewing}
             onAdd={(n) => api.addLocation(n).catch(fail)} onCapture={(n) => api.setActiveLocation(n).catch(fail)} />
         </aside>

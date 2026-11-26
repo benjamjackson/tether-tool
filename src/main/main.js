@@ -82,6 +82,7 @@ function wireEngine() {
   const sonyInbox = path.join(dataDir, 'Sony Tether Inbox');
   sony = new SonyTether({ saveDir: sonyInbox });
   sony.on('state', (st) => send('sony', st));
+  sony.on('settings', (s) => send('sonySettings', s));
   sony.on('connected', (model) => {
     sonyCam = { ...sonyCamera(model), tethered: true };
     try {
@@ -147,6 +148,8 @@ function wireEngine() {
   handle('cameras', () => engine.cameraState());
   handle('sonyState', () => sony.state);
   handle('sonyShoot', () => sony.shoot());
+  handle('sonySettings', () => sony.settings());
+  handle('sonySet', (key, value) => sony.setSetting(key, value));
   handle('chooseCameraFolder', async (cam) => {
     const r = await dialog.showOpenDialog(win, {
       title: `Folder where ${cam.name}'s tether program saves`,

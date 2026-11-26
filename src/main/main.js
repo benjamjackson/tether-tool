@@ -15,6 +15,17 @@ const { DEFAULT_LABELS } = require('../core/xmp');
 // Previews are served to the window from the app's cache folder only.
 protocol.registerSchemesAsPrivileged([{ scheme: 'tether', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
+// Keep the app's working index in one place whichever way Wrangle is started
+// (installed app or launcher). Older versions kept it in a "tether-tool" folder.
+{
+  const dataDir = path.join(app.getPath('appData'), 'Wrangle');
+  const oldDir = path.join(app.getPath('appData'), 'tether-tool');
+  if (!fs.existsSync(dataDir) && fs.existsSync(oldDir)) {
+    try { fs.renameSync(oldDir, dataDir); } catch (err) { console.warn('Could not move old data folder:', err.message); }
+  }
+  app.setPath('userData', dataDir);
+}
+
 let win = null;
 let engine = null;
 let cameras = null;
@@ -169,6 +180,7 @@ function wireEngine() {
 app.whenReady().then(() => {
   wireEngine();
   createWindow();
+  if (process.env.WRANGLE_SMOKE_TEST) require('./smoke-test').run(win);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

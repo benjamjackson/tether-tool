@@ -40,6 +40,11 @@ jobs:
       - name: Build the Sony tether helper
         run: bash native/sony/build-mac.sh
       - name: Package the app
+        env:
+          # The app is "ad-hoc" signed (no paid Apple account, no secrets), which
+          # Apple-chip Macs require. electron-builder skips signing on pull
+          # requests unless told otherwise.
+          CSC_FOR_PULL_REQUEST: 'true'
         run: >
           npx electron-builder --mac dmg --${{ matrix.arch }} --publish never
           -c.extraMetadata.version=$VERSION

@@ -13,7 +13,12 @@ async function checks(win) {
     win.webContents.once('did-finish-load', resolve);
     win.webContents.once('did-fail-load', (_e, code, desc) => reject(new Error(`window failed to load: ${desc} (${code})`)));
   });
-  const rendered = await win.webContents.executeJavaScript('document.getElementById("root").childElementCount');
+  // React draws the interface a moment after the page loads, so wait for it.
+  let rendered = 0;
+  for (let i = 0; i < 60 && !rendered; i++) {
+    rendered = await win.webContents.executeJavaScript('document.getElementById("root").childElementCount');
+    if (!rendered) await new Promise((r) => setTimeout(r, 250));
+  }
   if (!rendered) throw new Error('the interface did not render');
 
   const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#808080' } }).png().toBuffer();
@@ -30,6 +35,10 @@ async function checks(win) {
 }
 
 function run(win) {
+  win.webContents.on('console-message', (e) => {
+    if (e.level === 'error' || e.level === 'warning') console.log(`[window ${e.level}] ${e.message}`);
+  });
+  win.webContents.on('render-process-gone', (_e, d) => console.error(`window crashed: ${d.reason}`));
   const timer = setTimeout(() => { console.error('SMOKE TEST FAILED: timed out'); app.exit(1); }, 60000);
   checks(win).then(
     (msg) => { clearTimeout(timer); console.log(`SMOKE TEST OK: ${msg}`); app.exit(0); },
